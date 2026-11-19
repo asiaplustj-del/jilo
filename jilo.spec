@@ -25,5 +25,5 @@ coll = COLLECT(exe, a.binaries, a.datas, name="Jilo", upx=False)
 if IS_MAC:
     app = BUNDLE(coll, name="Jilo.app", icon=icon, bundle_identifier="tj.asiaplus.jilo",
                  info_plist={"CFBundleName": "Jilo", "CFBundleDisplayName": "Jilo",
-                             "CFBundleShortVersionString": "1.0", "CFBundleVersion": "1.0",
+                             "CFBundleShortVersionString": "1.0.1", "CFBundleVersion": "1.0.1",
                              "NSHighResolutionCapable": True, "LSMinimumSystemVersion": "11.0"})

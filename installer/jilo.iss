@@ -1,5 +1,5 @@
 ; Установщик Jilo для Windows (Inno Setup 6)
-#define AppVer "1.0"
+#define AppVer "1.0.1"
 [Setup]
 AppId={{6E1B3C1E-2F8A-4C6B-9B1E-7A1E4A2C0B11}
 AppName=Jilo

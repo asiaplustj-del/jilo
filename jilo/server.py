@@ -17,7 +17,7 @@ import numpy as np
 
 from . import core
 
-VERSION = "1.0"
+VERSION = "1.0.1"
 
 
 def resource_dir():
