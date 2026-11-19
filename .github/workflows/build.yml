@@ -36,11 +36,12 @@ jobs:
 
   macos:
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - runner: macos-14
+          - runner: macos-15
             arch: AppleSilicon
-          - runner: macos-13
+          - runner: macos-15-intel
             arch: Intel
     runs-on: ${{ matrix.runner }}
     steps:
