@@ -2,6 +2,7 @@ name: Build Jilo
 
 on:
   push:
+    branches: [main]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -63,16 +64,32 @@ jobs:
           path: dist/Jilo-macOS-*.dmg
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
     needs: [windows, macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+      - name: Version
+        id: ver
+        run: echo "v=$(cat VERSION | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
           path: out
           merge-multiple: true
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.ver.outputs.v }}
+          name: Jilo ${{ steps.ver.outputs.v }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          body: |
+            **Jilo** — убирает полосы и мерцание LED-экранов за спикером.
+
+            **Скачать:**
+            - Windows — `Jilo-Setup-${{ steps.ver.outputs.v }}.exe` (установщик) или `Jilo-Windows-portable.zip` (без установки)
+            - Mac с процессором Apple (M1/M2/M3/M4) — `Jilo-macOS-AppleSilicon.dmg`
+            - Mac с процессором Intel — `Jilo-macOS-Intel.dmg`
+
+            На Mac при первом запуске: правый клик по Jilo → «Открыть» → «Открыть».
           files: out/*
