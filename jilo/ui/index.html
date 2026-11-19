@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jilo</title>
+<link rel="icon" href="/ui/icon.png">
+<style>
+:root{
+  --bg:#0d0d10;--panel:#16161a;--panel2:#1c1c21;--panel3:#232329;--line:#26262d;--line2:#33333c;
+  --text:#ececef;--mute:#8b8b95;--mute2:#5f5f69;
+  --acc:#F25C19;--acc2:#ff7a3d;--yel:#FED800;--ok:#4cd08a;--err:#ff5a52;
+  --r:12px;--r2:8px;
+  --font:"SF Pro Display","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI Variable Display","Segoe UI",Inter,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;-webkit-font-smoothing:antialiased;user-select:none}
+button{font-family:inherit;font-size:13px;color:inherit}
+.app{display:grid;grid-template-rows:56px 1fr;height:100vh;min-width:1060px}
+
+/* ---------- верхняя панель */
+header{display:flex;align-items:center;gap:16px;padding:0 18px;border-bottom:1px solid var(--line);background:#111114}
+.logo{font-size:24px;font-weight:800;letter-spacing:-.6px;line-height:1}
+.logo i{color:var(--acc);font-style:normal}
+.tag{color:var(--mute);font-size:12px;margin-top:2px}
+.fileinfo{flex:1;display:flex;align-items:center;gap:10px;min-width:0;justify-content:center}
+.fname{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px 9px;color:var(--mute);font-size:11.5px;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:32px;padding:0 14px;border-radius:var(--r2);border:1px solid var(--line2);background:var(--panel2);cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap}
+.btn:hover{background:var(--panel3);border-color:#44444f}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--acc2);border-color:var(--acc2)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--mute)}
+.btn.ghost:hover{color:var(--text);background:var(--panel2)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn svg{width:15px;height:15px}
+
+/* ---------- основная область */
+main{display:grid;grid-template-columns:1fr 344px;min-height:0}
+.left{display:grid;grid-template-rows:46px 1fr 74px;min-width:0;min-height:0;border-right:1px solid var(--line)}
+.toolbar{display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--line)}
+.sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:var(--r2);padding:2px;gap:2px}
+.seg button{height:26px;padding:0 11px;border:0;border-radius:6px;background:transparent;color:var(--mute);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.seg button:hover{color:var(--text)}
+.seg button.on{background:var(--panel3);color:var(--text);box-shadow:0 0 0 1px var(--line2) inset}
+.seg.full{display:flex}
+.seg.full button{flex:1;justify-content:center}
+.tool{height:30px;padding:0 11px;border-radius:var(--r2);border:1px solid var(--line);background:var(--panel);color:var(--mute);cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.tool:hover{color:var(--text);border-color:var(--line2)}
+.tool.on{color:#111;background:var(--yel);border-color:var(--yel);font-weight:600}
+.tool svg{width:15px;height:15px}
+.grow{flex:1}
+
+.stage{position:relative;min-height:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#141418 0%,#0b0b0d 70%);overflow:hidden}
+.viewport{position:relative;display:flex;gap:10px}
+.cv{position:relative;display:block;background:#000;border-radius:4px}
+.wipe .cvB{position:absolute;left:0;top:0}
+.handle{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);cursor:ew-resize;transform:translateX(-1px);z-index:5}
+.handle::after{content:"";position:absolute;top:50%;left:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:var(--acc);box-shadow:0 2px 10px rgba(0,0,0,.5);border:2px solid #fff}
+.handle::before{content:"◂▸";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:10px;z-index:2;white-space:nowrap;letter-spacing:1px;line-height:1}
+.lbl{position:absolute;top:10px;z-index:6;font-size:11px;font-weight:700;letter-spacing:.6px;padding:4px 8px;border-radius:6px;background:rgba(10,10,12,.72);color:#fff;pointer-events:none}
+.lbl.r{right:10px}.lbl.l{left:10px}
+.lbl.r b{color:var(--acc)}
+.region{position:absolute;border:2px dashed var(--yel);background:rgba(254,216,0,.07);z-index:7;pointer-events:none;border-radius:2px}
+.region span{position:absolute;left:-2px;top:-24px;background:var(--yel);color:#111;font-size:11px;font-weight:700;padding:3px 7px;border-radius:5px 5px 5px 0}
+.pick{position:absolute;width:18px;height:18px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.5);transform:translate(-50%,-50%);z-index:7;pointer-events:none}
+.status{position:absolute;left:14px;bottom:12px;z-index:8;display:flex;align-items:center;gap:8px;background:rgba(14,14,17,.86);border:1px solid var(--line);padding:7px 11px;border-radius:999px;font-size:12px;color:var(--mute);backdrop-filter:blur(6px)}
+.status .dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.status.warn .dot{background:var(--yel)}
+.status.off .dot{background:var(--mute2)}
+.status b{color:var(--text);font-weight:600}
+.busy{position:absolute;right:14px;bottom:12px;z-index:8;display:none;align-items:center;gap:8px;background:rgba(14,14,17,.86);border:1px solid var(--line);padding:7px 12px;border-radius:999px;font-size:12px;color:var(--mute)}
+.busy.on{display:flex}
+.spin{width:13px;height:13px;border:2px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.cursor-pick{cursor:crosshair}
+
+.empty{position:absolute;inset:18px;border:2px dashed var(--line2);border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;transition:border-color .15s,background .15s}
+.empty.drag{border-color:var(--acc);background:rgba(242,92,25,.06)}
+.empty .big{font-size:22px;font-weight:700;letter-spacing:-.3px}
+.empty .sub{color:var(--mute);max-width:440px;line-height:1.5}
+.empty .ic{width:64px;height:64px;border-radius:18px;background:var(--panel2);display:flex;align-items:center;justify-content:center;border:1px solid var(--line)}
+.empty .ic svg{width:30px;height:30px;color:var(--acc)}
+
+/* ---------- таймлайн */
+.timeline{display:flex;align-items:center;gap:12px;padding:0 16px;border-top:1px solid var(--line);background:#111114}
+.tc{font-variant-numeric:tabular-nums;font-size:16px;font-weight:600;letter-spacing:.3px;min-width:112px}
+.tc small{color:var(--mute);font-weight:400;font-size:12px;margin-left:6px}
+.track{position:relative;flex:1;height:34px;cursor:pointer}
+.track .rail{position:absolute;left:0;right:0;top:15px;height:4px;border-radius:2px;background:var(--panel3)}
+.track .fill{position:absolute;left:0;top:15px;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--acc),var(--yel))}
+.track .knob{position:absolute;top:8px;width:4px;height:18px;border-radius:2px;background:#fff;transform:translateX(-2px);box-shadow:0 0 0 3px rgba(242,92,25,.35)}
+.track .mot{position:absolute;top:12px;height:10px;border-radius:3px;background:rgba(254,216,0,.25);border:1px solid rgba(254,216,0,.6)}
+.nav{display:flex;gap:4px}
+.nav button{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--mute);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.nav button:hover{color:var(--text);border-color:var(--line2)}
+.nav svg{width:14px;height:14px}
+
+/* ---------- боковая панель */
+aside{display:flex;flex-direction:column;min-height:0;background:#111114}
+.scroll{flex:1;overflow-y:auto;padding:14px 14px 6px}
+.scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;margin-bottom:10px}
+.card.dim .body{opacity:.38;pointer-events:none}
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ch h3{margin:0;font-size:13.5px;font-weight:700;flex:1;letter-spacing:-.1px}
+.ch .n{width:22px;height:22px;border-radius:7px;background:var(--panel3);display:flex;align-items:center;justify-content:center;color:var(--acc)}
+.ch .n svg{width:13px;height:13px}
+.hint{color:var(--mute);font-size:11.5px;line-height:1.45;margin:6px 0 0}
+.row{margin-top:12px}
+.rl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.rl label{font-weight:600;font-size:12.5px}
+.rl .v{font-variant-numeric:tabular-nums;color:var(--yel);font-weight:600;font-size:12.5px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:transparent;cursor:pointer;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--acc) 0,var(--acc) var(--p,50%),var(--panel3) var(--p,50%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;margin-top:-6px;box-shadow:0 1px 4px rgba(0,0,0,.5),0 0 0 3px rgba(242,92,25,.25)}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--panel3)}
+input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--acc)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:0;border-radius:50%;background:#fff}
+.sw{position:relative;width:36px;height:20px;flex:none}
+.sw input{display:none}
+.sw span{position:absolute;inset:0;border-radius:999px;background:var(--panel3);border:1px solid var(--line2);cursor:pointer;transition:.18s}
+.sw span::after{content:"";position:absolute;width:14px;height:14px;left:2px;top:2px;border-radius:50%;background:#8b8b95;transition:.18s}
+.sw input:checked+span{background:var(--yel);border-color:var(--yel)}
+.sw input:checked+span::after{left:18px;background:#111}
+.presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.presets button{height:54px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--mute)}
+.presets button b{color:var(--text);font-size:12.5px;font-weight:600}
+.presets button small{font-size:10.5px}
+.presets button:hover{border-color:var(--line2)}
+.presets button.on{border-color:var(--acc);background:rgba(242,92,25,.12)}
+.presets button.on b{color:#fff}
+.kv{display:flex;align-items:center;gap:8px;margin-top:10px}
+.kv .k{flex:1;color:var(--mute);font-size:12px}
+.swatch{width:22px;height:22px;border-radius:6px;border:1px solid var(--line2);flex:none}
+.small{height:26px;padding:0 9px;font-size:12px;border-radius:7px}
+.foot{border-top:1px solid var(--line);padding:12px 14px 14px;background:#111114}
+.out{font-size:11.5px;color:var(--mute);margin:8px 0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:rtl;text-align:left}
+.go{width:100%;height:44px;font-size:14.5px;border-radius:10px}
+.prog{margin-top:10px;display:none}
+.prog.on{display:block}
+.bar{height:8px;border-radius:4px;background:var(--panel3);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--yel));transition:width .4s}
+.pl{display:flex;justify-content:space-between;color:var(--mute);font-size:11.5px;margin-top:6px;font-variant-numeric:tabular-nums}
+.done{display:none;margin-top:10px;padding:10px 12px;border-radius:9px;background:rgba(76,208,138,.08);border:1px solid rgba(76,208,138,.35)}
+.done.on{display:block}
+.done b{color:var(--ok)}
+.err{display:none;margin-top:10px;padding:10px 12px;border-radius:9px;background:rgba(255,90,82,.08);border:1px solid rgba(255,90,82,.35);color:#ffb3ae;font-size:12px;word-break:break-word}
+.err.on{display:block}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50}
+.modal.on{display:flex}
+.modal .box{width:560px;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:18px}
+.modal h4{margin:0 0 6px;font-size:16px}
+.modal input{width:100%;height:36px;margin:10px 0 14px;border-radius:8px;border:1px solid var(--line2);background:var(--bg);color:var(--text);padding:0 10px;font-family:inherit;font-size:13px;user-select:text}
+.toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line2);padding:9px 14px;border-radius:9px;z-index:60;display:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.toast.on{display:block}
+kbd{font-family:inherit;font-size:10.5px;color:var(--mute);border:1px solid var(--line2);border-radius:4px;padding:0 4px}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <div>
+      <div class="logo">Jilo<i>.</i></div>
+      <div class="tag">полосы и мерцание LED-экранов</div>
+    </div>
+    <div class="fileinfo" id="fileinfo"><span class="chip">Видео не открыто</span></div>
+    <button class="btn" id="btnOpen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Открыть видео</button>
+  </header>
+
+  <main>
+    <section class="left">
+      <div class="toolbar">
+        <div class="seg" id="viewSeg">
+          <button data-v="wipe" class="on" title="Шторка: тяните ползунок по кадру">Шторка</button>
+          <button data-v="side" title="До и после рядом">Рядом</button>
+          <button data-v="a" title="Только исходник">До</button>
+          <button data-v="b" title="Только результат">После</button>
+        </div>
+        <div class="sep"></div>
+        <button class="tool" id="toolPick" title="Щёлкните по фону экрана, чтобы указать его цвет"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>Пипетка</button>
+        <button class="tool" id="toolRegion" title="Обведите экран рамкой — фильтр будет работать только внутри"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/></svg>Область</button>
+        <div class="grow"></div>
+        <div class="seg" id="motSeg" title="Длина отрывка для просмотра в движении">
+          <button data-s="1">1 с</button><button data-s="2" class="on">2 с</button><button data-s="4">4 с</button>
+        </div>
+        <button class="btn" id="btnMotion" title="Посмотреть результат в движении: мерцание видно только так"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>В движении</button>
+      </div>
+
+      <div class="stage" id="stage">
+        <div class="empty" id="empty">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16" stroke-dasharray="2 2"/></svg></div>
+          <div class="big">Перетащите видео сюда</div>
+          <div class="sub">MP4, MOV, MXF, AVI. Исходник не меняется — результат сохранится рядом с ним.</div>
+          <button class="btn primary" id="btnOpen2">Выбрать файл</button>
+        </div>
+        <div class="viewport wipe" id="viewport" style="display:none">
+          <canvas class="cv cvA" id="cvA"></canvas>
+          <canvas class="cv cvB" id="cvB"></canvas>
+          <div class="handle" id="handle"></div>
+          <div class="lbl l" id="lblA">ДО</div>
+          <div class="lbl r" id="lblB"><b>●</b> ПОСЛЕ</div>
+        </div>
+        <div class="status off" id="status" style="display:none"><span class="dot"></span><span id="statusText"></span></div>
+        <div class="busy" id="busy"><span class="spin"></span><span id="busyText">Считаю…</span></div>
+      </div>
+
+      <div class="timeline">
+        <div class="tc" id="tc">00:00:00:00</div>
+        <div class="nav">
+          <button id="bBackS" title="−1 секунда (Shift+←)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 6v12l-8.5-6zM21 6v12l-8.5-6z"/></svg></button>
+          <button id="bBack" title="−1 кадр (←)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 6v12l-8.5-6z"/></svg></button>
+          <button id="bFwd" title="+1 кадр (→)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 6v12l8.5-6z"/></svg></button>
+          <button id="bFwdS" title="+1 секунда (Shift+→)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6v12l8.5-6zM13 6v12l8.5-6z"/></svg></button>
+        </div>
+        <div class="track" id="track"><div class="rail"></div><div class="fill" id="tfill"></div><div class="mot" id="tmot" style="display:none"></div><div class="knob" id="tknob"></div></div>
+        <div class="tc" style="min-width:auto"><small id="tdur">—</small></div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="scroll">
+        <div class="card">
+          <div class="ch"><div class="n"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></div><h3>Режим</h3></div>
+          <div class="presets" id="presets">
+            <button data-p="soft"><b>Мягко</b><small>чисто</small></button>
+            <button data-p="medium" class="on"><b>Средне</b><small>баланс</small></button>
+            <button data-p="strong"><b>Сильно</b><small>максимум</small></button>
+            <button data-p="custom"><b>Свой</b><small>ползунки</small></button>
+          </div>
+          <p class="hint" id="presetHint">Баланс: убирает большую часть полос без лишнего шума. Хорош для начала.</p>
+        </div>
+
+        <div class="card" id="cardBands">
+          <div class="ch"><div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 7h18M3 12h18M3 17h18"/></svg></div><h3>Полосы экрана</h3><label class="sw"><input type="checkbox" id="bands" checked><span></span></label></div>
+          <div class="body">
+            <div class="seg full" id="dirSeg">
+              <button data-d="h" class="on"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 8h18M3 16h18"/></svg>Горизонтальные</button>
+              <button data-d="v"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M8 3v18M16 3v18"/></svg>Вертикальные</button>
+            </div>
+            <div class="row">
+              <div class="rl"><label for="strength">Сила</label><span class="v" id="vStrength">85%</span></div>
+              <input type="range" id="strength" min="10" max="100" step="1" value="85">
+              <p class="hint">Какую часть перепада убрать. 100% — тёмная полоса поднимается до уровня фона полностью.</p>
+            </div>
+            <div class="row">
+              <div class="rl"><label for="ceiling">Потолок осветления</label><span class="v" id="vCeiling">×1.9</span></div>
+              <input type="range" id="ceiling" min="1.3" max="2.4" step="0.05" value="1.9">
+              <p class="hint">Насколько можно осветлить самую тёмную полосу. Меньше — чище картинка, больше — лучше закрываются глубокие полосы.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="cardSmooth">
+          <div class="ch"><div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="1.4"/><circle cx="12" cy="9" r="1.4"/><circle cx="18" cy="6" r="1.4"/><circle cx="8" cy="15" r="1.4"/><circle cx="16" cy="16" r="1.4"/></svg></div><h3>Шум и сетка экрана</h3></div>
+          <div class="body">
+            <div class="rl"><label for="smooth">Сглаживание</label><span class="v" id="vSmooth">20%</span></div>
+            <input type="range" id="smooth" min="0" max="100" step="1" value="20">
+            <p class="hint">Смягчает шум и пиксельную сетку только на экране, сильнее там, где были полосы. Спикера не размывает.</p>
+          </div>
+        </div>
+
+        <div class="card dim" id="cardFlicker">
+          <div class="ch"><div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></div><h3>Мерцание всего кадра</h3><label class="sw"><input type="checkbox" id="flicker"><span></span></label></div>
+          <div class="body">
+            <div class="rl"><label for="fstrength">Сила</label><span class="v" id="vFstrength">80%</span></div>
+            <input type="range" id="fstrength" min="10" max="100" step="1" value="80">
+            <p class="hint">Включайте, если «пульсирует» вся картинка — свет, лампы, LED-освещение сцены. Выравнивает общую яркость кадра.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><div class="n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><h3>Экран</h3></div>
+          <div class="kv">
+            <div class="swatch" id="swatch" style="background:#3f63c8"></div>
+            <div class="k" id="colorText">Фон: синий, авто</div>
+            <button class="btn small" id="bPick2">Пипетка</button>
+            <button class="btn small ghost" id="bColorReset" title="Вернуть авто (синий)">Сброс</button>
+          </div>
+          <div class="kv">
+            <div class="swatch" style="background:transparent;border:2px dashed var(--yel)"></div>
+            <div class="k" id="regionText">Весь кадр</div>
+            <button class="btn small" id="bRegion2">Выделить</button>
+            <button class="btn small ghost" id="bRegionReset">Сброс</button>
+          </div>
+          <p class="hint">Синий экран находится сам. Если экран другого цвета — возьмите цвет пипеткой с фона. Рамкой можно ограничить работу только экраном.</p>
+        </div>
+      </div>
+
+      <div class="foot">
+        <div class="seg full" id="fmtSeg">
+          <button data-f="mp4" class="on">MP4 · H.264</button>
+          <button data-f="prores" title="ProRes 422 HQ — для дальнейшего монтажа и цветокора, файл большой">MOV · ProRes</button>
+        </div>
+        <div class="out" id="outPath" title="">Сохранится рядом с исходником</div>
+        <button class="btn primary go" id="btnGo" disabled>Обработать весь файл</button>
+        <div class="prog" id="prog">
+          <div class="bar"><i id="pbar"></i></div>
+          <div class="pl"><span id="ptext">0%</span><span id="peta"></span></div>
+          <button class="btn ghost small" id="btnCancel" style="margin-top:6px">Отменить</button>
+        </div>
+        <div class="done" id="done"><b>Готово.</b> <span id="doneText"></span><div style="margin-top:8px;display:flex;gap:6px"><button class="btn small" id="btnReveal">Показать в папке</button></div></div>
+        <div class="err" id="err"></div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div class="modal" id="pathModal"><div class="box">
+  <h4>Путь к видео</h4>
+  <div class="hint">Вставьте полный путь к файлу (в окне программы файл можно просто перетащить).</div>
+  <input id="pathInput" placeholder="C:\Видео\C0003.MP4  или  /Volumes/Диск/C0003.MP4">
+  <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn ghost" id="pathCancel">Отмена</button><button class="btn primary" id="pathOk">Открыть</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const API=(p,d)=>fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d||{})}).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j});
+const GET=p=>fetch(p).then(r=>r.json());
+const PRESETS={soft:{strength:0.7,ceiling:1.6,smooth:0.25},medium:{strength:0.85,ceiling:1.9,smooth:0.2},strong:{strength:1.0,ceiling:2.4,smooth:0.35}};
+const HINTS={soft:'Мягко: картинка максимально чистая, самые тёмные полосы могут чуть остаться.',medium:'Баланс: убирает большую часть полос без лишнего шума. Хорош для начала.',strong:'Максимум: закрывает даже самые глубокие полосы. Если появится шум — добавьте сглаживание.',custom:'Свои значения: настройте ползунки ниже.'};
+
+const S={file:null,t:0,view:'wipe',wipe:0.5,tool:null,fmt:'mp4',preset:'medium',motionSec:2,
+  set:{bands:true,direction:'h',strength:0.85,ceiling:1.9,smooth:0.2,flicker:false,flicker_strength:0.8,color:null,region:null},
+  imgA:null,imgB:null,seq:0,motion:null,exporting:false,lastOut:null};
+try{const saved=JSON.parse(localStorage.getItem('jilo.settings')||'null');if(saved){Object.assign(S.set,saved.set||{});S.preset=saved.preset||S.preset;S.fmt=saved.fmt||S.fmt;S.set.color=null;S.set.region=null}}catch(e){}
+function save(){try{localStorage.setItem('jilo.settings',JSON.stringify({set:S.set,preset:S.preset,fmt:S.fmt}))}catch(e){}}
+
+function toast(t,ms){const el=$('toast');el.textContent=t;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),ms||2600)}
+function tc(sec){if(!S.file)return'00:00:00:00';const f=S.file.fps,fr=Math.round(sec*f),ff=Math.round(f);const fpart=fr%ff,s=Math.floor(fr/ff);return[Math.floor(s/3600),Math.floor(s/60)%60,s%60,fpart].map(v=>String(v).padStart(2,'0')).join(':')}
+function fmtDur(s){s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s/60)%60,ss=s%60;return(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(ss).padStart(2,'0')}
+function busy(on,txt){$('busy').classList.toggle('on',!!on);if(txt)$('busyText').textContent=txt}
+
+/* ---------- контролы */
+function rangeFill(el){const p=(el.value-el.min)/(el.max-el.min)*100;el.style.setProperty('--p',p+'%')}
+function syncUI(){
+  $('bands').checked=S.set.bands;$('cardBands').classList.toggle('dim',!S.set.bands);
+  $('flicker').checked=S.set.flicker;$('cardFlicker').classList.toggle('dim',!S.set.flicker);
+  $('strength').value=Math.round(S.set.strength*100);$('vStrength').textContent=Math.round(S.set.strength*100)+'%';
+  $('ceiling').value=S.set.ceiling;$('vCeiling').textContent='×'+(+S.set.ceiling).toFixed(2).replace(/0$/,'');
+  $('smooth').value=Math.round(S.set.smooth*100);$('vSmooth').textContent=Math.round(S.set.smooth*100)+'%';
+  $('fstrength').value=Math.round(S.set.flicker_strength*100);$('vFstrength').textContent=Math.round(S.set.flicker_strength*100)+'%';
+  document.querySelectorAll('input[type=range]').forEach(rangeFill);
+  document.querySelectorAll('#presets button').forEach(b=>b.classList.toggle('on',b.dataset.p===S.preset));
+  $('presetHint').textContent=HINTS[S.preset];
+  document.querySelectorAll('#dirSeg button').forEach(b=>b.classList.toggle('on',b.dataset.d===S.set.direction));
+  document.querySelectorAll('#fmtSeg button').forEach(b=>b.classList.toggle('on',b.dataset.f===S.fmt));
+  document.querySelectorAll('#viewSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.view));
+  document.querySelectorAll('#motSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.s===S.motionSec));
+  if(S.set.color){$('swatch').style.background=S.set.colorHex||'#888';$('colorText').textContent='Фон: свой '+(S.set.colorHex||'')}
+  else{$('swatch').style.background='#3f63c8';$('colorText').textContent='Фон: синий, авто'}
+  $('regionText').textContent=S.set.region?'Рамка задана':'Весь кадр';
+  $('toolPick').classList.toggle('on',S.tool==='pick');$('toolRegion').classList.toggle('on',S.tool==='region');
+  $('btnGo').disabled=!S.file||S.exporting;
+  drawRegion();
+}
+function changed(fromSlider){if(fromSlider&&S.preset!=='custom'){S.preset='custom'}syncUI();save();schedulePreview(90);updateOut()}
+
+document.querySelectorAll('#presets button').forEach(b=>b.onclick=()=>{S.preset=b.dataset.p;if(PRESETS[S.preset])Object.assign(S.set,PRESETS[S.preset]);changed(false)});
+$('strength').oninput=e=>{S.set.strength=e.target.value/100;changed(true)};
+$('ceiling').oninput=e=>{S.set.ceiling=+e.target.value;changed(true)};
+$('smooth').oninput=e=>{S.set.smooth=e.target.value/100;changed(true)};
+$('fstrength').oninput=e=>{S.set.flicker_strength=e.target.value/100;changed(false)};
+$('bands').onchange=e=>{S.set.bands=e.target.checked;changed(false)};
+$('flicker').onchange=e=>{S.set.flicker=e.target.checked;changed(false)};
+document.querySelectorAll('#dirSeg button').forEach(b=>b.onclick=()=>{S.set.direction=b.dataset.d;changed(false)});
+document.querySelectorAll('#fmtSeg button').forEach(b=>b.onclick=()=>{S.fmt=b.dataset.f;syncUI();save();updateOut()});
+document.querySelectorAll('#viewSeg button').forEach(b=>b.onclick=()=>{S.view=b.dataset.v;syncUI();layout()});
+document.querySelectorAll('#motSeg button').forEach(b=>b.onclick=()=>{S.motionSec=+b.dataset.s;syncUI()});
+function setTool(t){S.tool=S.tool===t?null:t;syncUI();$('viewport').classList.toggle('cursor-pick',!!S.tool);if(S.tool==='pick')toast('Щёлкните по фону экрана');if(S.tool==='region')toast('Обведите экран рамкой')}
+$('toolPick').onclick=()=>setTool('pick');$('bPick2').onclick=()=>setTool('pick');
+$('toolRegion').onclick=()=>setTool('region');$('bRegion2').onclick=()=>setTool('region');
+$('bColorReset').onclick=()=>{S.set.color=null;S.set.colorHex=null;changed(false)};
+$('bRegionReset').onclick=()=>{S.set.region=null;changed(false)};
+
+/* ---------- открытие файла */
+async function openDialog(){
+  if(window.pywebview&&window.pywebview.api&&window.pywebview.api.open_file){
+    const p=await window.pywebview.api.open_file();if(p)loadPath(p);
+  }else{$('pathModal').classList.add('on');$('pathInput').focus()}
+}
+$('btnOpen').onclick=openDialog;$('btnOpen2').onclick=openDialog;
+$('pathCancel').onclick=()=>$('pathModal').classList.remove('on');
+$('pathOk').onclick=()=>{const v=$('pathInput').value.trim();$('pathModal').classList.remove('on');if(v)loadPath(v)};
+$('pathInput').onkeydown=e=>{if(e.key==='Enter')$('pathOk').click()};
+
+async function loadPath(p){
+  busy(true,'Открываю…');hideErr();
+  try{
+    const info=await API('/api/load',{path:p});
+    S.file=info;S.t=info.duration*0.5;S.set.region=null;S.set.color=null;S.motion=null;stopMotion();
+    $('empty').style.display='none';$('viewport').style.display='';$('status').style.display='';
+    $('fileinfo').innerHTML='';
+    const n=document.createElement('span');n.className='fname';n.textContent=info.name;n.title=info.path;$('fileinfo').appendChild(n);
+    [info.w+'×'+info.h,(Math.round(info.fps*100)/100)+' к/с',fmtDur(info.duration),info.size_mb>=1024?(info.size_mb/1024).toFixed(1)+' ГБ':info.size_mb+' МБ'].forEach(t=>{const c=document.createElement('span');c.className='chip';c.textContent=t;$('fileinfo').appendChild(c)});
+    $('tdur').textContent=tc(info.duration);
+    $('done').classList.remove('on');
+    syncUI();updateTrack();updateOut();await preview();
+  }catch(e){showErr(e.message);busy(false)}
+}
+window.Jilo={loadPath};
+
+/* перетаскивание: в окне программы путь передаёт Python; здесь — подсветка и запасной вариант */
+let dragN=0;
+document.addEventListener('dragenter',e=>{e.preventDefault();dragN++;$('empty').classList.add('drag')});
+document.addEventListener('dragleave',e=>{dragN=Math.max(0,dragN-1);if(!dragN)$('empty').classList.remove('drag')});
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{e.preventDefault();dragN=0;$('empty').classList.remove('drag');
+  const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
+  if(f&&f.pywebviewFullPath){loadPath(f.pywebviewFullPath);return}
+  if(!window.pywebview){$('pathModal').classList.add('on');$('pathInput').value=f?f.name:'';$('pathInput').focus()}
+});
+
+/* ---------- превью */
+let pvTimer=null;
+function schedulePreview(ms){if(!S.file)return;clearTimeout(pvTimer);pvTimer=setTimeout(preview,ms==null?120:ms)}
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src})}
+async function preview(){
+  if(!S.file)return;
+  stopMotion();
+  const my=++S.seq;busy(true,'Считаю кадр…');
+  try{
+    const r=await API('/api/preview',{t:S.t,settings:S.set,width:1600});
+    if(my!==S.seq)return;
+    const [a,b]=await Promise.all([loadImg(r.before),loadImg(r.after)]);
+    if(my!==S.seq)return;
+    S.imgA=a;S.imgB=b;S.t=r.t;layout();drawFrames(a,b);setStatus(r.stats);updateTrack();
+  }catch(e){if(my===S.seq)showErr(e.message)}
+  if(my===S.seq)busy(false);
+}
+function setStatus(st){
+  const el=$('status');el.className='status';
+  let t;
+  if(!S.set.bands&&!S.set.flicker){el.classList.add('off');t='Все фильтры выключены'}
+  else if(S.set.bands&&st.active){t='Экран найден · <b>'+Math.round(st.frac*100)+'%</b> '+(S.set.region?'области':'кадра')+' · подъём полос до <b>×'+st.gain_max.toFixed(2)+'</b>'}
+  else if(S.set.bands&&st.frac<0.12){el.classList.add('warn');t='Экран не найден в этом кадре. Если фон экрана не синий — возьмите его цвет <b>пипеткой</b>'}
+  else if(S.set.bands){el.classList.add('warn');t='Экран найден, полос в этом кадре почти нет'}
+  else{t='Полосы выключены'}
+  if(S.set.flicker)t+=' · мерцание кадра: <b>'+(st.flicker>=1?'+':'')+((st.flicker-1)*100).toFixed(1)+'%</b>';
+  $('statusText').innerHTML=t;
+}
+
+/* ---------- отрисовка */
+function layout(){
+  if(!S.file)return;
+  const st=$('stage').getBoundingClientRect(),vp=$('viewport');
+  const ar=S.file.w/S.file.h,side=S.view==='side';
+  const maxW=(st.width-36-(side?10:0))/(side?2:1),maxH=st.height-36;
+  let w=maxW,h=w/ar;if(h>maxH){h=maxH;w=h*ar}
+  w=Math.floor(w);h=Math.floor(h);
+  vp.className='viewport'+(S.view==='wipe'?' wipe':'')+(S.tool?' cursor-pick':'');
+  [$('cvA'),$('cvB')].forEach(c=>{c.style.width=w+'px';c.style.height=h+'px';const dpr=window.devicePixelRatio||1;if(c.width!==Math.round(w*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr)}});
+  $('cvA').style.display=(S.view==='b')?'none':'';
+  $('cvB').style.display=(S.view==='a')?'none':'';
+  $('handle').style.display=S.view==='wipe'?'':'none';
+  $('lblA').style.display=(S.view==='b')?'none':'';
+  $('lblB').style.display=(S.view==='a')?'none':'';
+  if(S.view==='side'){$('lblB').style.right='10px';$('lblA').style.left='10px'}
+  applyWipe();drawRegion();
+  if(S.imgA)drawFrames(S.motionCurA||S.imgA,S.motionCurB||S.imgB);
+}
+function drawFrames(a,b){
+  const ca=$('cvA'),cb=$('cvB');
+  if(a)ca.getContext('2d').drawImage(a,0,0,ca.width,ca.height);
+  if(b)cb.getContext('2d').drawImage(b,0,0,cb.width,cb.height);
+}
+function applyWipe(){
+  const cb=$('cvB');
+  if(S.view==='wipe'){const w=parseFloat(cb.style.width)||0;cb.style.clipPath='inset(0 0 0 '+(S.wipe*100)+'%)';$('handle').style.left=(S.wipe*w)+'px'}
+  else cb.style.clipPath='none';
+}
+window.addEventListener('resize',layout);
+
+/* шторка */
+(function(){let drag=false;
+  $('handle').addEventListener('mousedown',e=>{drag=true;e.preventDefault();e.stopPropagation()});
+  window.addEventListener('mousemove',e=>{if(!drag)return;const r=$('cvA').getBoundingClientRect();S.wipe=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));applyWipe()});
+  window.addEventListener('mouseup',()=>drag=false);
+})();
+
+/* пипетка и область */
+function canvasPos(e){
+  const targets=[$('cvA'),$('cvB')].filter(c=>c.style.display!=='none');
+  for(const c of targets){const r=c.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)return{x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height,c,r}}
+  return null;
+}
+let regDrag=null;
+$('viewport').addEventListener('mousedown',async e=>{
+  if(!S.tool||!S.file)return;
+  const p=canvasPos(e);if(!p)return;e.preventDefault();
+  if(S.tool==='pick'){
+    try{const r=await API('/api/sample',{x:p.x,y:p.y});S.set.color=r.hsv;S.set.colorHex=r.hex;S.tool=null;showPick(p);changed(false);toast('Цвет экрана: '+r.hex)}catch(err){showErr(err.message)}
+  }else if(S.tool==='region'){regDrag={x0:p.x,y0:p.y,c:p.c};S.set.region=[p.x,p.y,p.x,p.y];drawRegion()}
+});
+window.addEventListener('mousemove',e=>{if(!regDrag)return;const r=regDrag.c.getBoundingClientRect();const x=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),y=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height));S.set.region=[regDrag.x0,regDrag.y0,x,y];drawRegion()});
+window.addEventListener('mouseup',()=>{if(!regDrag)return;regDrag=null;const g=S.set.region;const x0=Math.min(g[0],g[2]),x1=Math.max(g[0],g[2]),y0=Math.min(g[1],g[3]),y1=Math.max(g[1],g[3]);
+  if(x1-x0<0.03||y1-y0<0.03){S.set.region=null}else S.set.region=[x0,y0,x1,y1];S.tool=null;changed(false)});
+function drawRegion(){
+  document.querySelectorAll('.region').forEach(n=>n.remove());
+  const g=S.set.region;if(!g||!S.file)return;
+  const vp=$('viewport'),vr=vp.getBoundingClientRect();
+  [$('cvA'),$('cvB')].forEach((c,i)=>{
+    if(c.style.display==='none')return;if(S.view==='wipe'&&i===1)return;
+    const r=c.getBoundingClientRect();const x0=Math.min(g[0],g[2]),x1=Math.max(g[0],g[2]),y0=Math.min(g[1],g[3]),y1=Math.max(g[1],g[3]);
+    const d=document.createElement('div');d.className='region';
+    d.style.left=(r.left-vr.left+x0*r.width)+'px';d.style.top=(r.top-vr.top+y0*r.height)+'px';d.style.width=((x1-x0)*r.width)+'px';d.style.height=((y1-y0)*r.height)+'px';
+    d.innerHTML='<span>Экран</span>';vp.appendChild(d)});
+}
+function showPick(p){const vp=$('viewport'),vr=vp.getBoundingClientRect();const d=document.createElement('div');d.className='pick';d.style.left=(p.r.left-vr.left+p.x*p.r.width)+'px';d.style.top=(p.r.top-vr.top+p.y*p.r.height)+'px';vp.appendChild(d);setTimeout(()=>d.remove(),1600)}
+
+/* ---------- таймлайн */
+function updateTrack(){
+  if(!S.file)return;const p=S.file.duration?S.t/S.file.duration:0;
+  $('tfill').style.width=(p*100)+'%';$('tknob').style.left=(p*100)+'%';$('tc').textContent=tc(S.t);
+}
+(function(){let drag=false;
+  const setFrom=e=>{const r=$('track').getBoundingClientRect();const p=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));S.t=p*S.file.duration;updateTrack()};
+  $('track').addEventListener('mousedown',e=>{if(!S.file)return;drag=true;setFrom(e);stopMotion()});
+  window.addEventListener('mousemove',e=>{if(drag){setFrom(e);schedulePreview(350)}});
+  window.addEventListener('mouseup',()=>{if(drag){drag=false;schedulePreview(30)}});
+})();
+function step(sec){if(!S.file)return;S.t=Math.min(S.file.duration-1/S.file.fps,Math.max(0,S.t+sec));updateTrack();schedulePreview(160)}
+$('bBack').onclick=()=>step(-1/S.file.fps);$('bFwd').onclick=()=>step(1/S.file.fps);
+$('bBackS').onclick=()=>step(-1);$('bFwdS').onclick=()=>step(1);
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'&&e.target.type!=='range')return;
+  if(!S.file)return;
+  if(e.key==='ArrowLeft'){e.preventDefault();step(e.shiftKey?-1:-1/S.file.fps)}
+  else if(e.key==='ArrowRight'){e.preventDefault();step(e.shiftKey?1:1/S.file.fps)}
+  else if(e.key===' '){e.preventDefault();$('btnMotion').click()}
+  else if(e.key==='Escape'){S.tool=null;syncUI()}
+});
+
+/* ---------- просмотр в движении */
+let motTimer=null,motPlay=null;
+function stopMotion(){clearInterval(motTimer);motTimer=null;cancelAnimationFrame(motPlay);motPlay=null;S.motionCurA=S.motionCurB=null;$('tmot').style.display='none';$('btnMotion').innerHTML='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>В движении'}
+$('btnMotion').onclick=async()=>{
+  if(!S.file)return;
+  if(motPlay||motTimer){stopMotion();API('/api/motion_cancel');if(S.imgA)drawFrames(S.imgA,S.imgB);busy(false);return}
+  const my=++S.seq;
+  try{
+    await API('/api/motion',{t:S.t,seconds:S.motionSec,settings:S.set});
+    $('btnMotion').innerHTML='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>Стоп';
+    busy(true,'Готовлю отрывок…');
+    motTimer=setInterval(async()=>{
+      const st=await GET('/api/motion_status');
+      if(my!==S.seq){clearInterval(motTimer);motTimer=null;return}
+      if(st.state==='running'){busy(true,'Готовлю отрывок… '+st.done+' / '+st.total);return}
+      clearInterval(motTimer);motTimer=null;
+      if(st.state!=='done'){busy(false);if(st.error)showErr(st.error);stopMotion();return}
+      busy(true,'Загружаю кадры…');
+      const A=[],B=[];
+      await Promise.all(Array.from({length:st.n},(_,i)=>Promise.all([loadImg('/api/motion_frame?side=a&i='+i+'&r='+my).then(x=>A[i]=x),loadImg('/api/motion_frame?side=b&i='+i+'&r='+my).then(x=>B[i]=x)])));
+      if(my!==S.seq)return;busy(false);
+      const p0=S.t/S.file.duration,p1=(S.t+st.n/st.fps)/S.file.duration;$('tmot').style.display='';$('tmot').style.left=(p0*100)+'%';$('tmot').style.width=Math.max(0.4,(p1-p0)*100)+'%';
+      let i=0,last=0;const dt=1000/st.fps;
+      const loop=ts=>{if(ts-last>=dt-1){last=ts;S.motionCurA=A[i];S.motionCurB=B[i];drawFrames(A[i],B[i]);i=(i+1)%A.length}motPlay=requestAnimationFrame(loop)};
+      motPlay=requestAnimationFrame(loop);
+    },300);
+  }catch(e){showErr(e.message);busy(false)}
+};
+
+/* ---------- экспорт */
+async function updateOut(){if(!S.file){$('outPath').textContent='Сохранится рядом с исходником';return}
+  try{const r=await API('/api/out_name',{settings:S.set,fmt:S.fmt});S.outPath=r.out;$('outPath').textContent='Сохранится: '+r.out;$('outPath').title=r.out}catch(e){}}
+let expTimer=null;
+$('btnGo').onclick=async()=>{
+  if(!S.file)return;hideErr();$('done').classList.remove('on');
+  let out=null;
+  try{
+    const r=await API('/api/export',{settings:S.set,fmt:S.fmt,out});
+    S.exporting=true;syncUI();$('prog').classList.add('on');$('btnGo').textContent='Обработка…';
+    expTimer=setInterval(pollExport,700);pollExport();
+  }catch(e){showErr(e.message)}
+};
+async function pollExport(){
+  const st=await GET('/api/export_status');
+  if(st.state==='running'){
+    const p=st.total?Math.min(100,st.done/st.total*100):0;$('pbar').style.width=p.toFixed(1)+'%';
+    $('ptext').textContent=p.toFixed(1)+'% · '+st.done+' / '+st.total+' кадров';
+    $('peta').textContent=st.speed?(st.speed+' к/с · осталось '+(st.eta!=null?fmtDur(st.eta):'…')):'запуск…';
+    return;
+  }
+  clearInterval(expTimer);expTimer=null;S.exporting=false;$('prog').classList.remove('on');$('btnGo').textContent='Обработать весь файл';syncUI();
+  if(st.state==='done'){S.lastOut=st.out;$('doneText').textContent='Файл сохранён за '+fmtDur(st.seconds||0)+': '+st.out.split(/[\\/]/).pop();$('done').classList.add('on');updateOut()}
+  else if(st.state==='error')showErr(st.error);
+  else if(st.state==='cancelled')toast('Обработка отменена');
+}
+$('btnCancel').onclick=()=>API('/api/cancel');
+$('btnReveal').onclick=()=>API('/api/reveal',{path:S.lastOut});
+function showErr(m){$('err').textContent=m;$('err').classList.add('on')}
+function hideErr(){$('err').classList.remove('on')}
+
+syncUI();
+})();
+</script>
+</body>
+</html>
